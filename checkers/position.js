@@ -10,7 +10,7 @@ Position.prototype.positionJumped = function(position){
 }
 
 Position.prototype.getMedian = function(int1, int2){
-	return (int1 > int2) ? in1 - 1 : int2 - 1
+	return (int1 > int2) ? int1 - 1 : int2 - 1
 }
 
 Position.prototype.isEqual = function(position){

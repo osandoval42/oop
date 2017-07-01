@@ -1,5 +1,6 @@
 const COLORS = require('./colors');
 const Position = require('./position');
+const Move = require('./move')
 
 function Piece(color, position, board){
 	this.board = board;
@@ -7,18 +8,17 @@ function Piece(color, position, board){
 	this.position = position;
 }
 
-Piece.prototype.move = function(newPos){
-	let positionJumped;
-	if (Math.absolute(newPos.row - this.position.row) === 2){
-		positionJumped = newPos.positionJumped(this.position);
+Piece.prototype.move = function(move){
+	this.position = move.to;
+	this.board.setPiece(move.to, this);
+	if (move.positionJumped !== undefined){
+		this.board.killPiece(move.positionJumped);
 	}
-	this.position = newPos;
-	this.board.setPiece(newPos, this);
-	if (positionJumped){
-		board.killPiece(positionJumped);
+	this.board.emptyPosition(move.from);
+	if (this.constructor !== King && this.position.row === 0 || this.position.row === 7){
+		this.kingMe();
 	}
 }
-
 
 
 Piece.prototype.kingMe = function(){
@@ -32,51 +32,68 @@ Piece.prototype.toString = function(){
 	} else if (this.constructor === Piece) {
 		return (this.color === COLORS.RED ? 'r' : 'b');
 	} else {
-		return ' ';
+		return (((this.position.row + this.position.col) % 2 === 0) ? ' ' : 'X');
 	}	
 }
 
-Piece.prototype.RedMoveDeltas = [new Position(1, -1), new Position(1, 1)]
-Piece.prototype.BlackMoveDeltas = [new Position(-1, -1), new Position(-1, 1)]
-Piece.prototype.RedJumpDeltas = [new Position(2, -2), new Position(2, 2)]
-Piece.prototype.BlackJumpDeltas = [new Position(-2, -2), new Position(-2, 2)]
+Piece.prototype.RedMoveDeltas = [new Position(-1, -1), new Position(-1, 1)]
+Piece.prototype.BlackMoveDeltas = [new Position(1, -1), new Position(1, 1)]
+Piece.prototype.RedJumpDeltas = [new Position(-2, -2), new Position(-2, 2)]
+Piece.prototype.BlackJumpDeltas = [new Position(2, -2), new Position(2, 2)]
 
-Piece.prototype.potentialNonJumpMoves(){
+Piece.prototype.potentialNonJumpMoves = function(){
+	let relevantDeltas;
 	if (this.constructor === King){
-		const relevantDeltas = this.moveDeltas;
+		relevantDeltas = this.moveDeltas;
 	} else {
-		const relevantDeltas = this.color === COLORS.RED ? RedMoveDeltas : BlackMoveDeltas;
+		relevantDeltas = this.color === COLORS.RED ? this.RedMoveDeltas : this.BlackMoveDeltas;
 	}
 	let moves = [];
-	relevantDeltas.forEach(function (delta){
-		const move = delta.sumPositions(this.position);
-		const pieceAtPosition = this.board.getPiece(move);
-		if (pieceAtPosition.constructor === NullPiece){
-			moves.push(move);
+	relevantDeltas.forEach((delta) => {
+		const moveTo = delta.sumPositions(this.position);
+		if (this.board === undefined){
+			debugger;
+		}
+		if (this.board.isInRange(moveTo)){
+			const pieceAtPosition = this.board.getPiece(moveTo);
+			if (pieceAtPosition.constructor === NullPiece){
+				moves.push(new Move(this.position, moveTo));
+			}
 		}
 	})
 	return (moves);
 }
 
-Piece.prototype.potentialJumps(){
+Piece.prototype.potentialJumps = function(){
+	let relevantDeltas;
 	if (this.constructor === King){
-		const relevantDeltas = this.jumpDeltas;
+		relevantDeltas = this.jumpDeltas;
 	} else {
-		const relevantDeltas = this.color === COLORS.RED ? RedJumpDeltas : BlackJumpDeltas;
+		relevantDeltas = this.color === COLORS.RED ? this.RedJumpDeltas : this.BlackJumpDeltas;
 	}
 	let moves = [];
-	relevantDeltas.forEach(function (delta){
-		const move = delta.sumPositions(this.position);
-		const jumpedPosition = move.positionJumped(this.position);
-		const pieceJumped = this.board.getPiece(jumpedPosition);
-		if (pieceJumped.constructor !== NullPiece && pieceJumped.color !== this.color){
-			moves.push(move);
+	relevantDeltas.forEach((delta) => {
+		const moveTo = delta.sumPositions(this.position);
+		const jumpedPosition = moveTo.positionJumped(this.position);
+		// if (this.board === undefined){
+		// 	debugger;
+		// }
+		if (this.board.isInRange(moveTo) && this.board.isInRange(jumpedPosition)){
+			const pieceJumped = this.board.getPiece(jumpedPosition);
+			const pieceLandedOn = this.board.getPiece(moveTo);
+			if (pieceJumped === undefined || pieceLandedOn === undefined){
+			debugger;
+			}
+			if (pieceJumped.constructor !== NullPiece && pieceJumped.color !== this.color &&
+				pieceLandedOn.constructor === NullPiece){
+				moves.push(new Move(this.position, moveTo, jumpedPosition));
+			}
 		}
 	})
 	return moves;
 }
 
-Piece.prototype.potentialMoves(){
+Piece.prototype.potentialMoves = function(){
 	let potentialMoves = this.potentialJumps();
 	if (potentialJumps.length === 0){
 		potentialMoves = this.potentialNonJumpMoves();
@@ -95,8 +112,8 @@ King.prototype.moveDeltas = Piece.prototype.RedMoveDeltas.concat(Piece.prototype
 King.prototype.jumpDeltas = Piece.prototype.RedJumpDeltas.concat(Piece.prototype.BlackJumpDeltas);
 
 
-function NullPiece(){
-
+function NullPiece(pos){
+	this.position = pos;
 }
 
 
