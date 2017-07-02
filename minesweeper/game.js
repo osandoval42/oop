@@ -1,8 +1,8 @@
 const Board = require('./board')
 const Player = require('./player');
 
-function Game(dimensions = 8){
-	this.dimensions = 8
+function Game(dimensions = 9){
+	this.dimensions = dimensions
 }
 
 Game.prototype.start = function(){
