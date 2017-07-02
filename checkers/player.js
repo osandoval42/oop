@@ -1,12 +1,12 @@
 const readline = require('readline');
-
-const Pieces = require('./piece');
-const Position = require('./position');
-const es6Promise = require('es6-promise');
 const reader = readline.createInterface({
   input: process.stdin,
   output: process.stdout
 });
+
+const Pieces = require('./piece');
+const Position = require('./position');
+const es6Promise = require('es6-promise');
 
 function Player(color, board, game){
 	this.color = color;
