@@ -1,7 +1,7 @@
 const Tiles = require('./Tile');
 const Position = require('./position')
 
-function Board(dimensions, game, bombToTileRatio = .277){
+function Board(dimensions, game, bombToTileRatio = .22){
 	this.dimensions = dimensions;
 	this.game = game;
 	this.bombs = Math.round((dimensions * dimensions) * bombToTileRatio);
